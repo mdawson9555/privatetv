@@ -178,7 +178,16 @@ function loadActivePl() {
         dlog('Downloading iptv-org global playlist…', 'info');
         fetch('https://iptv-org.github.io/iptv/index.m3u')
             .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.text(); })
-            .then(txt => { hideLoading(); parsePlaylist(txt); showToast('Global playlist loaded'); dlog('Global playlist OK', 'success'); })
+            .then(txt => { 
+                hideLoading(); 
+                parsePlaylist(txt); 
+                showToast('Global playlist loaded'); 
+                dlog('Global playlist OK', 'success'); 
+                // Auto-load & play the first channel automatically
+                if (S.filtered && S.filtered.length > 0) {
+                    playChannel(S.filtered[0], 0);
+                }
+            })
             .catch(err => {
                 hideLoading();
                 dlog(`Failed to fetch global: ${err.message} — falling back to sample`, 'error');
