@@ -47,6 +47,7 @@ const S = {
     retryCount:   0,
     retryMax:     3,
     retryTimer:   null,
+    useDirect:    false,
 };
 
 /* ═══════════ DOM REFS ═══════════ */
@@ -413,8 +414,11 @@ function mkChItem(ch, idx) {
 /* ═══════════════════════════════════════════════
    PLAYER ENGINE
 ═══════════════════════════════════════════════ */
-function playChannel(ch, idx, retry = false) {
+function playChannel(ch, idx, retry = false, forceDirect = false) {
     if (!ch) return;
+
+    if (!retry) S.useDirect = false;
+    if (forceDirect) S.useDirect = true;
 
     S.activeChannel  = ch;
     S.channelIndex   = idx ?? S.channelIndex;
@@ -450,11 +454,14 @@ function playChannel(ch, idx, retry = false) {
     const raw = ch.url;
 
     // Determine stream protocol & proxy it
-    const streamUrl = PROXY_ENABLED
-        ? PROXY + encodeURIComponent(raw)
-        : raw;
+    let streamUrl = raw;
+    let usingProxy = false;
+    if (PROXY_ENABLED && !S.useDirect) {
+        streamUrl = PROXY + encodeURIComponent(raw);
+        usingProxy = true;
+    }
 
-    dlog(`🔀 Stream routed through local proxy`, 'info');
+    dlog(usingProxy ? `🔀 Stream routed through Edge Proxy` : `🌐 Attempting DIRECT connection`, 'info');
 
     const isHlsUrl = raw.includes('.m3u8') || raw.includes('m3u8');
 
@@ -536,13 +543,23 @@ function playChannel(ch, idx, retry = false) {
 }
 
 function handleStreamError(type, detail, ch, idx) {
+    // If proxy was used and failed, fallback to direct connection (for https streams)
+    if (!S.useDirect && PROXY_ENABLED && ch.url.startsWith('https://')) {
+        dlog(`🔄 Proxy failed or blocked. Retrying with DIRECT connection…`, 'warning');
+        S.useDirect = true;
+        showState('loading');
+        D.loadingText.textContent = `Attempting direct connection…`;
+        S.retryTimer = setTimeout(() => playChannel(ch, idx, true, true), 1000);
+        return;
+    }
+
     if (S.retryCount < S.retryMax) {
         S.retryCount++;
         const wait = S.retryCount * 2000;
         dlog(`🔄 Retry ${S.retryCount}/${S.retryMax} in ${wait/1000}s…`, 'warning');
         D.loadingText.textContent = `Retry ${S.retryCount}/${S.retryMax}…`;
         showState('loading');
-        S.retryTimer = setTimeout(() => playChannel(ch, idx, true), wait);
+        S.retryTimer = setTimeout(() => playChannel(ch, idx, true, S.useDirect), wait);
     } else {
         dlog('🔴 Max retries reached. Stream unavailable.', 'error');
         D.errorTitle.textContent  = 'Stream Unavailable';
