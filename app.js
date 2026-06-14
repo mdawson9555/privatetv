@@ -348,7 +348,7 @@ function mkChItem(ch, idx) {
     li.innerHTML = `
         <div class="ch-logo-wrap">
             ${ch.logo
-                ? `<img class="ch-logo" src="${ch.logo}" alt="" loading="lazy" onerror="this.style.display='none';this.nextSibling.style.display='flex'">`
+                ? `<img class="ch-logo" src="${ch.logo}" alt="" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='inline'">`
                 : ''}
             <span class="ch-fallback" style="${ch.logo ? 'display:none' : ''}">${letter}</span>
         </div>
