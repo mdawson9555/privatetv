@@ -506,6 +506,10 @@ function showState(state) {
     // 'playing' / 'paused' = all hidden, video element visible
 }
 
+function showLoading(msg) {
+    showState('loading');
+    if (msg) D.loadingText.textContent = msg;
+}
 function hideLoading() { D.loading.classList.add('hidden'); }
 
 /* ═══════════════════════════════════════════════
