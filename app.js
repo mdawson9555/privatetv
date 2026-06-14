@@ -95,6 +95,7 @@ const D = {
     volSlider:        q('#vol-slider'),
     prevChBtn:        q('#prev-ch-btn'),
     nextChBtn:        q('#next-ch-btn'),
+    ccBtn:            q('#cc-btn'),
     debugToggleBtn:   q('#debug-toggle-btn'),
     ratioBtn:         q('#ratio-btn'),
     ratioLabel:       q('#ratio-label'),
@@ -470,11 +471,16 @@ function playChannel(ch, idx, retry = false) {
         hls.on(Hls.Events.MANIFEST_LOADING, () => dlog('📡 Fetching HLS manifest…', 'info'));
         hls.on(Hls.Events.MANIFEST_PARSED, (e, data) => {
             dlog(`✅ Manifest parsed. Levels: ${data.levels.length}`, 'success');
+            checkCCAvailability();
             showState('playing');
             D.video.play().catch(err => {
                 dlog(`⚠️ Autoplay blocked — tap Play to start. (${err.name})`, 'warning');
                 showState('paused');
             });
+        });
+
+        hls.on(Hls.Events.SUBTITLE_TRACKS_UPDATED, () => {
+            checkCCAvailability();
         });
 
         hls.on(Hls.Events.LEVEL_LOADED, (e, d) => {
@@ -582,6 +588,9 @@ function setupVideoEvents() {
     });
 
     v.addEventListener('timeupdate', updateProgress);
+    if (v.textTracks) {
+        v.textTracks.addEventListener('addtrack', checkCCAvailability);
+    }
     v.volume = 1;
 }
 
@@ -666,6 +675,62 @@ function cycleAspect() {
     const labels = { contain: 'Fit', cover: 'Fill', fill: 'Stretch' };
     D.ratioLabel.textContent = labels[r] || 'Fit';
     showToast(`Aspect: ${labels[r]}`);
+}
+
+/* ─── Captions ─── */
+function checkCCAvailability() {
+    let hasCC = false;
+    if (hls && hls.subtitleTracks && hls.subtitleTracks.length > 0) hasCC = true;
+    if (D.video.textTracks && D.video.textTracks.length > 0) {
+        for (let i = 0; i < D.video.textTracks.length; i++) {
+            // Ignore default injected metadata tracks from some browsers
+            if (D.video.textTracks[i].kind === 'subtitles' || D.video.textTracks[i].kind === 'captions') {
+                hasCC = true;
+                break;
+            }
+        }
+    }
+    
+    if (hasCC) {
+        D.ccBtn.classList.remove('hidden');
+    } else {
+        D.ccBtn.classList.add('hidden');
+        D.ccBtn.classList.remove('active');
+    }
+}
+
+function toggleCC() {
+    let turnedOn = false;
+    
+    if (hls && hls.subtitleTracks && hls.subtitleTracks.length > 0) {
+        if (hls.subtitleTrack === -1) {
+            hls.subtitleTrack = 0;
+            turnedOn = true;
+        } else {
+            hls.subtitleTrack = -1;
+        }
+    } else if (D.video.textTracks && D.video.textTracks.length > 0) {
+        let anyShowing = false;
+        for (let i = 0; i < D.video.textTracks.length; i++) {
+            if (D.video.textTracks[i].mode === 'showing') anyShowing = true;
+        }
+        
+        for (let i = 0; i < D.video.textTracks.length; i++) {
+            const track = D.video.textTracks[i];
+            if (anyShowing) {
+                track.mode = 'hidden';
+            } else if (track.kind === 'subtitles' || track.kind === 'captions') {
+                track.mode = 'showing';
+                turnedOn = true;
+            }
+        }
+    } else {
+        showToast('No subtitles available');
+        return;
+    }
+
+    D.ccBtn.classList.toggle('active', turnedOn);
+    showToast(`Captions ${turnedOn ? 'ON' : 'OFF'}`);
 }
 
 /* ─── Fullscreen ─── */
@@ -969,6 +1034,7 @@ function bindEvents() {
     D.volSlider.addEventListener('mouseleave', () => D.volSlider.classList.remove('expanded'));
     D.prevChBtn.addEventListener('click', skipToPrev);
     D.nextChBtn.addEventListener('click', skipToNext);
+    D.ccBtn.addEventListener('click', toggleCC);
     D.ratioBtn.addEventListener('click', cycleAspect);
     D.fsBtn.addEventListener('click', () => toggleFs());
     D.mobileFsBtn.addEventListener('click', () => toggleFs());
