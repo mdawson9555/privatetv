@@ -42,6 +42,8 @@ const S = {
     // player
     aspectRatios: ['contain','cover','fill'],
     aspectIdx:    0,
+    qualityLevels:[],
+    qualityIdx:   -1,
     retryCount:   0,
     retryMax:     3,
     retryTimer:   null,
@@ -96,6 +98,8 @@ const D = {
     prevChBtn:        q('#prev-ch-btn'),
     nextChBtn:        q('#next-ch-btn'),
     ccBtn:            q('#cc-btn'),
+    qualityBtn:       q('#quality-btn'),
+    qualityLabel:     q('#quality-label'),
     debugToggleBtn:   q('#debug-toggle-btn'),
     ratioBtn:         q('#ratio-btn'),
     ratioLabel:       q('#ratio-label'),
@@ -471,6 +475,16 @@ function playChannel(ch, idx, retry = false) {
         hls.on(Hls.Events.MANIFEST_LOADING, () => dlog('📡 Fetching HLS manifest…', 'info'));
         hls.on(Hls.Events.MANIFEST_PARSED, (e, data) => {
             dlog(`✅ Manifest parsed. Levels: ${data.levels.length}`, 'success');
+            
+            S.qualityLevels = data.levels;
+            S.qualityIdx = -1;
+            D.qualityLabel.textContent = 'Auto';
+            if (data.levels.length > 1) {
+                D.qualityBtn.classList.remove('hidden');
+            } else {
+                D.qualityBtn.classList.add('hidden');
+            }
+            
             checkCCAvailability();
             showState('playing');
             D.video.play().catch(err => {
@@ -675,6 +689,28 @@ function cycleAspect() {
     const labels = { contain: 'Fit', cover: 'Fill', fill: 'Stretch' };
     D.ratioLabel.textContent = labels[r] || 'Fit';
     showToast(`Aspect: ${labels[r]}`);
+}
+
+/* ─── Quality Selector ─── */
+function cycleQuality() {
+    if (!hls || S.qualityLevels.length <= 1) return;
+    
+    S.qualityIdx++;
+    if (S.qualityIdx >= S.qualityLevels.length) {
+        S.qualityIdx = -1; // back to Auto
+    }
+    
+    hls.currentLevel = S.qualityIdx;
+    
+    if (S.qualityIdx === -1) {
+        D.qualityLabel.textContent = 'Auto';
+        showToast('Quality: Auto (Adaptive)');
+    } else {
+        const level = S.qualityLevels[S.qualityIdx];
+        const res = level.height ? `${level.height}p` : `${Math.round(level.bitrate / 1000)}k`;
+        D.qualityLabel.textContent = res;
+        showToast(`Quality: ${res}`);
+    }
 }
 
 /* ─── Captions ─── */
@@ -1035,6 +1071,7 @@ function bindEvents() {
     D.prevChBtn.addEventListener('click', skipToPrev);
     D.nextChBtn.addEventListener('click', skipToNext);
     D.ccBtn.addEventListener('click', toggleCC);
+    D.qualityBtn.addEventListener('click', cycleQuality);
     D.ratioBtn.addEventListener('click', cycleAspect);
     D.fsBtn.addEventListener('click', () => toggleFs());
     D.mobileFsBtn.addEventListener('click', () => toggleFs());
