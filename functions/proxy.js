@@ -33,12 +33,9 @@ export async function onRequestGet(context) {
         upstream = await fetch(targetUrl, {
             method: 'GET',
             headers: {
-                'User-Agent':
-                    'Mozilla/5.0 (SmartTV; Linux) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Safari/537.36',
+                'User-Agent': 'VLC/3.0.16 LibVLC/3.0.16',
                 Accept: '*/*',
                 'Accept-Language': 'en-US,en;q=0.9',
-                Origin: parsedTarget.origin,
-                Referer: parsedTarget.origin + '/',
             },
             redirect: 'follow',
         });
