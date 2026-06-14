@@ -32,6 +32,7 @@ const S = {
     activeChannel:  null,
     channelIndex:   0,
     categoryIndex:  0,
+    favorites:      [],
 
     // TV nav
     tv:          false,
@@ -151,8 +152,20 @@ document.addEventListener('DOMContentLoaded', () => {
 function loadStoredPlaylists() {
     try {
         S.playlists = JSON.parse(localStorage.getItem('ptv_playlists') || '[]');
-    } catch { S.playlists = []; }
+        S.favorites = JSON.parse(localStorage.getItem('ptv_fav') || '[]');
+    } catch { S.playlists = []; S.favorites = []; }
     rebuildSelect();
+}
+
+function toggleFavorite(url) {
+    if (S.favorites.includes(url)) {
+        S.favorites = S.favorites.filter(u => u !== url);
+        showToast('Removed from favorites');
+    } else {
+        S.favorites.push(url);
+        showToast('Added to favorites');
+    }
+    localStorage.setItem('ptv_fav', JSON.stringify(S.favorites));
 }
 
 function savePlaylists() {
@@ -234,6 +247,14 @@ function parsePlaylist(text) {
 
     S.channels = chs;
     S.categories = [...new Set(chs.map(c => c.group))].sort();
+    
+    // Prioritize Sports category to be first
+    const sportIdx = S.categories.findIndex(c => c.toLowerCase().includes('sport'));
+    if (sportIdx > -1) {
+        const sportCat = S.categories.splice(sportIdx, 1)[0];
+        S.categories.unshift(sportCat);
+    }
+
     S.activeCategory = 'all';
     S.channelIndex = 0;
     S.categoryIndex = 0;
@@ -250,9 +271,12 @@ function renderCategories() {
     D.catList.innerHTML = '';
     const allItem = mkCatItem('all', 'all', 0);
     D.catList.appendChild(allItem);
+    
+    const favItem = mkCatItem('favorites', 'favorites', 1);
+    D.catList.appendChild(favItem);
 
     S.categories.forEach((cat, i) => {
-        D.catList.appendChild(mkCatItem(cat, categoryIcon(cat), i + 1));
+        D.catList.appendChild(mkCatItem(cat, categoryIcon(cat), i + 2));
     });
 }
 
@@ -268,6 +292,7 @@ function mkCatItem(cat, iconType, listIdx) {
 
 function categoryIcon(cat) {
     const lc = cat.toLowerCase();
+    if (lc === 'favorites') return 'favorites';
     if (lc.includes('news')) return 'news';
     if (lc.includes('sport') || lc.includes('football') || lc.includes('soccer')) return 'sport';
     if (lc.includes('movie') || lc.includes('film') || lc.includes('cinema')) return 'movie';
@@ -290,6 +315,7 @@ const SVG_ICONS = {
     relig:     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>',
     entertain: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>',
     general:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>',
+    favorites: '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>',
 };
 
 function catSvg(type) { return SVG_ICONS[type] || SVG_ICONS.general; }
@@ -307,8 +333,11 @@ function selectCategory(cat, listIdx) {
 
 function renderChannels() {
     const q = D.search.value.toLowerCase();
-    S.filtered = S.channels.filter(ch => {
-        const catOk = S.activeCategory === 'all' || ch.group === S.activeCategory;
+    
+    let sourceChannels = S.activeCategory === 'favorites' ? S.channels.filter(ch => S.favorites.includes(ch.url)) : S.channels;
+
+    S.filtered = sourceChannels.filter(ch => {
+        const catOk = S.activeCategory === 'all' || S.activeCategory === 'favorites' || ch.group === S.activeCategory;
         const srOk  = ch.name.toLowerCase().includes(q);
         return catOk && srOk;
     });
@@ -345,6 +374,7 @@ function mkChItem(ch, idx) {
     li.dataset.idx = idx;
 
     const letter = ch.name.charAt(0).toUpperCase() || '?';
+    const isFav = S.favorites.includes(ch.url);
     li.innerHTML = `
         <div class="ch-logo-wrap">
             ${ch.logo
@@ -355,9 +385,20 @@ function mkChItem(ch, idx) {
         <div class="ch-info">
             <div class="ch-name">${ch.name}</div>
             <div class="ch-group">${ch.group}</div>
-        </div>`;
+        </div>
+        <button class="fav-btn ${isFav ? 'active' : ''}" aria-label="Favorite">
+            <svg viewBox="0 0 24 24" fill="${isFav ? 'var(--amber)' : 'none'}" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        </button>`;
 
-    li.addEventListener('click', () => playChannel(ch, idx));
+    li.addEventListener('click', (e) => {
+        const favBtn = e.target.closest('.fav-btn');
+        if (favBtn) {
+            toggleFavorite(ch.url);
+            renderChannels();
+            return;
+        }
+        playChannel(ch, idx);
+    });
     li.addEventListener('keydown', e => {
         if (e.key === 'Enter') playChannel(ch, idx);
     });

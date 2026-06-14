@@ -254,6 +254,19 @@ ul { list-style: none; }
 .ch-group { font-size: .68rem; color: var(--text-s); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ch-more-hint { padding: 12px 10px; color: var(--text-m); font-size: .72rem; text-align: center; }
 
+/* Favorite button */
+.fav-btn {
+    width: 32px; height: 32px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-m);
+    transition: color .2s, transform .2s, background .2s;
+    border-radius: 50%;
+}
+.fav-btn svg { width: 18px; height: 18px; pointer-events: none; }
+.fav-btn:hover { color: var(--amber); background: rgba(255,255,255,.05); transform: scale(1.08); }
+.fav-btn.active { color: var(--amber); }
+.fav-btn.active svg { fill: var(--amber); stroke: var(--amber); }
+
 /* ═══════════════════════════════════════════
    5. SIDEBAR OVERLAY (mobile)
 ═══════════════════════════════════════════ */
