@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>PrivateTV · Live Streaming</title>
+    <meta name="description" content="Personal M3U playlist IPTV streaming player. Watch live TV channels with HLS.js, optimised for mobile and Smart TV browsers.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- App Root -->
+    <div id="app">
+
+        <!-- ═══════════ SIDEBAR ═══════════ -->
+        <aside id="sidebar" class="sidebar">
+
+            <!-- Brand -->
+            <div class="sidebar-brand">
+                <div class="brand-logo">
+                    <svg class="brand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="2" y="7" width="20" height="15" rx="2"/>
+                        <polyline points="17 2 12 7 7 2"/>
+                    </svg>
+                </div>
+                <div class="brand-text">
+                    <span class="brand-name">Private</span><span class="brand-accent">TV</span>
+                </div>
+                <button id="close-sidebar-btn" class="icon-btn sidebar-close" aria-label="Close menu">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+
+            <!-- Playlist Switcher -->
+            <div class="playlist-bar">
+                <div class="select-wrap">
+                    <select id="playlist-select" aria-label="Select playlist">
+                        <option value="global_iptv">🌍 iptv-org Global</option>
+                        <option value="sample">✨ Sample (News)</option>
+                    </select>
+                    <svg class="select-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
+                <button id="manage-btn" class="icon-btn" title="Manage playlists" aria-label="Manage playlists">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93l-1.41 1.41M21 12h-2M19.07 19.07l-1.41-1.41M12 21v-2M4.93 19.07l1.41-1.41M3 12h2M4.93 4.93l1.41 1.41"/></svg>
+                </button>
+            </div>
+
+            <!-- Search -->
+            <div class="search-wrapper">
+                <svg class="search-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input id="channel-search" type="search" placeholder="Search channels…" autocomplete="off" spellcheck="false">
+                <button id="clear-search-btn" class="clear-search-btn" aria-label="Clear search" style="display:none">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+
+            <!-- Two pane layout -->
+            <div class="panes">
+                <!-- Categories -->
+                <div class="cat-pane">
+                    <div class="pane-label">Categories</div>
+                    <ul id="category-list" class="cat-list"></ul>
+                </div>
+
+                <!-- Channels -->
+                <div class="ch-pane">
+                    <div class="pane-label">
+                        <span id="ch-count">Channels</span>
+                    </div>
+                    <ul id="channel-list" class="ch-list"></ul>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Backdrop (mobile) -->
+        <div id="sidebar-backdrop" class="sidebar-backdrop"></div>
+
+        <!-- ═══════════ MAIN ═══════════ -->
+        <main id="main" class="main">
+
+            <!-- Mobile header -->
+            <header class="mobile-header">
+                <button id="open-sidebar-btn" class="icon-btn" aria-label="Open menu">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                </button>
+                <span class="mobile-brand">Private<span>TV</span></span>
+                <button id="mobile-fs-btn" class="icon-btn" aria-label="Fullscreen">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+                </button>
+            </header>
+
+            <!-- ═══ PLAYER ═══ -->
+            <div id="player" class="player" tabindex="0" aria-label="Video Player">
+
+                <!-- Idle Splash -->
+                <div id="player-splash" class="player-splash">
+                    <div class="splash-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="15" rx="2"/><polyline points="17 2 12 7 7 2"/></svg>
+                    </div>
+                    <p class="splash-title">Select a channel to start</p>
+                    <p class="splash-sub">Choose from thousands of live channels</p>
+                </div>
+
+                <!-- Spinner / Loading State -->
+                <div id="player-loading" class="player-loading hidden">
+                    <div class="spinner-ring"></div>
+                    <p id="loading-text" class="loading-text">Connecting…</p>
+                </div>
+
+                <!-- Error State -->
+                <div id="player-error" class="player-error hidden">
+                    <div class="error-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                    </div>
+                    <p id="error-title" class="error-title">Stream Unavailable</p>
+                    <p id="error-detail" class="error-detail">Could not connect to this channel.</p>
+                    <div class="error-actions">
+                        <button id="retry-btn" class="retry-btn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3"/></svg>
+                            Retry
+                        </button>
+                        <button id="next-btn" class="next-btn">Next Channel</button>
+                    </div>
+                </div>
+
+                <!-- Video element -->
+                <video id="video" playsinline preload="none"></video>
+
+                <!-- Debug Console -->
+                <div id="debug-panel" class="debug-panel hidden">
+                    <div class="debug-header">
+                        <span class="debug-label">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+                            Stream Monitor
+                        </span>
+                        <div class="debug-stats">
+                            <span>Buff: <strong id="debug-buf">0.0s</strong></span>
+                            <span>Bw: <strong id="debug-bw">—</strong></span>
+                            <span>Lvl: <strong id="debug-level">—</strong></span>
+                        </div>
+                        <button id="debug-clear" class="debug-clear">CLR</button>
+                    </div>
+                    <div id="debug-log" class="debug-log"></div>
+                </div>
+
+                <!-- Controls Overlay -->
+                <div id="controls" class="controls">
+                    <!-- Top Bar: Channel info + LIVE badge -->
+                    <div class="ctrl-top">
+                        <div class="now-playing" id="now-playing-bar" style="display:none">
+                            <img id="ctrl-logo" class="ctrl-logo" src="" alt="" onerror="this.style.opacity=0">
+                            <div class="ctrl-info">
+                                <div class="ctrl-name" id="ctrl-name">—</div>
+                                <div class="ctrl-group" id="ctrl-group">—</div>
+                            </div>
+                        </div>
+                        <div class="live-pill" id="live-pill">
+                            <span class="live-dot"></span> LIVE
+                        </div>
+                    </div>
+
+                    <!-- Clickable centre (play/pause tap zone) -->
+                    <div class="ctrl-center" id="ctrl-center">
+                        <div class="center-play-icon" id="center-play">
+                            <svg id="center-play-svg" viewBox="0 0 24 24" fill="currentColor" width="48" height="48"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                        </div>
+                    </div>
+
+                    <!-- Progress / seekbar (hidden for live) -->
+                    <div id="progress-wrap" class="progress-wrap hidden">
+                        <div class="progress-track" id="progress-track">
+                            <div class="progress-fill" id="progress-fill"></div>
+                            <div class="progress-handle" id="progress-handle"></div>
+                        </div>
+                        <span class="time-label" id="time-label">0:00 / 0:00</span>
+                    </div>
+
+                    <!-- Bottom bar: controls row -->
+                    <div class="ctrl-bottom">
+                        <div class="ctrl-left">
+                            <button id="play-btn" class="ctrl-btn" aria-label="Play/Pause">
+                                <svg id="play-icon" viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                            </button>
+
+                            <div class="vol-wrap">
+                                <button id="vol-btn" class="ctrl-btn" aria-label="Mute">
+                                    <svg id="vol-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22">
+                                        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+                                    </svg>
+                                </button>
+                                <input id="vol-slider" class="vol-slider" type="range" min="0" max="1" step="0.02" value="1" aria-label="Volume">
+                            </div>
+                        </div>
+
+                        <div class="ctrl-center-btns">
+                            <button id="prev-ch-btn" class="ctrl-btn" title="Previous channel" aria-label="Previous channel">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><polyline points="15 18 9 12 15 6"/></svg>
+                            </button>
+                            <button id="next-ch-btn" class="ctrl-btn" title="Next channel" aria-label="Next channel">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><polyline points="9 18 15 12 9 6"/></svg>
+                            </button>
+                        </div>
+
+                        <div class="ctrl-right">
+                            <button id="debug-toggle-btn" class="ctrl-btn" title="Stream Monitor" aria-label="Toggle Debug">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+                            </button>
+                            <button id="ratio-btn" class="ctrl-btn ratio-btn" title="Aspect ratio" aria-label="Aspect ratio">
+                                <span id="ratio-label">Fit</span>
+                            </button>
+                            <button id="fs-btn" class="ctrl-btn" aria-label="Fullscreen">
+                                <svg id="fs-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TV focus ring -->
+                <div class="tv-focus-ring"></div>
+            </div>
+
+            <!-- TV keyboard hints -->
+            <div class="tv-hints">
+                <span><kbd>↑↓</kbd> Navigate</span>
+                <span><kbd>←→</kbd> Switch pane</span>
+                <span><kbd>Enter</kbd> Play</span>
+                <span><kbd>Space</kbd> Pause</span>
+                <span><kbd>F</kbd> Fullscreen</span>
+                <span><kbd>M</kbd> Mute</span>
+            </div>
+        </main>
+    </div>
+
+    <!-- ═══════════ MODAL ═══════════ -->
+    <div id="modal" class="modal-overlay" aria-hidden="true">
+        <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+            <div class="modal-head">
+                <h2 id="modal-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93l-1.41 1.41M21 12h-2M19.07 19.07l-1.41-1.41M12 21v-2M4.93 19.07l1.41-1.41M3 12h2M4.93 4.93l1.41 1.41"/></svg>
+                    Playlist Manager
+                </h2>
+                <button id="modal-close" class="icon-btn" aria-label="Close">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+            <div class="modal-tabs">
+                <button class="mtab active" data-tab="add">Add Playlist</button>
+                <button class="mtab" data-tab="manage">My Playlists</button>
+            </div>
+            <div class="modal-body">
+                <!-- Add tab -->
+                <div id="tab-add" class="tab active">
+                    <form id="add-form">
+                        <div class="fgroup">
+                            <label for="pl-name">Playlist Name</label>
+                            <input id="pl-name" type="text" placeholder="e.g. My IPTV" required>
+                        </div>
+                        <div class="fgroup">
+                            <label>Import Method</label>
+                            <div class="method-tabs">
+                                <label class="mtab-radio active"><input type="radio" name="method" value="url" checked> URL</label>
+                                <label class="mtab-radio"><input type="radio" name="method" value="file"> File</label>
+                                <label class="mtab-radio"><input type="radio" name="method" value="paste"> Paste</label>
+                            </div>
+                        </div>
+                        <div id="mpane-url" class="mpane active">
+                            <div class="fgroup">
+                                <label for="pl-url">M3U URL</label>
+                                <input id="pl-url" type="url" placeholder="https://example.com/playlist.m3u">
+                                <span class="fhint">Direct link to a .m3u or .m3u8 file</span>
+                            </div>
+                        </div>
+                        <div id="mpane-file" class="mpane">
+                            <div class="fgroup">
+                                <label>M3U File</label>
+                                <div class="file-drop-zone">
+                                    <input id="pl-file" type="file" accept=".m3u,.m3u8,.txt">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="36" height="36"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
+                                    <span class="drop-text">Click or drag M3U file here</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="mpane-paste" class="mpane">
+                            <div class="fgroup">
+                                <label for="pl-text">Paste M3U content</label>
+                                <textarea id="pl-text" rows="6" placeholder="#EXTM3U&#10;#EXTINF:-1,My Channel&#10;http://stream.url/live.m3u8"></textarea>
+                            </div>
+                        </div>
+                        <button type="submit" class="submit-btn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                            Load & Save Playlist
+                        </button>
+                    </form>
+                </div>
+                <!-- Manage tab -->
+                <div id="tab-manage" class="tab">
+                    <ul id="pl-list" class="pl-list"></ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast" class="toast" role="alert" aria-live="polite"></div>
+
+    <!-- HLS.js -->
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.7/dist/hls.min.js"></script>
+    <!-- App -->
+    <script src="app.js"></script>
+</body>
+</html>
