@@ -181,7 +181,10 @@ function savePlaylists() {
 
 function rebuildSelect() {
     D.playlistSelect.innerHTML =
-        `<option value="global_iptv">🌍 iptv-org Global</option>
+        `<option value="global_iptv">🌍 iptv-org Global (8000+ ch)</option>
+         <option value="iptv_sports">⚽ iptv-org Sports (1000+ ch)</option>
+         <option value="iptv_id">🇮🇩 iptv-org Indonesia (60+ ch)</option>
+         <option value="free_tv">✅ Free-TV IPTV (FTA Verified)</option>
          <option value="dhanytv">🇮🇩 dhanytv Indonesia (730+ ch)</option>
          <option value="dhanytv_ott">📺 dhanytv OTT-friendly (480+ ch HLS)</option>
          <option value="sample">✨ Sample (News)</option>`;
@@ -254,6 +257,69 @@ function loadActivePl() {
             .catch(err => {
                 hideLoading();
                 dlog(`Failed to fetch dhanytv-ott: ${err.message} — falling back to sample`, 'error');
+                showToast('⚠️ Fallback to Sample playlist');
+                S.activePl = 'sample'; D.playlistSelect.value = 'sample';
+                parsePlaylist(SAMPLE_M3U);
+            });
+    } else if (S.activePl === 'iptv_sports') {
+        showLoading('Fetching iptv-org Sports playlist…');
+        dlog('Downloading iptv-org Sports playlist (1000+ channels)…', 'info');
+        fetch('https://iptv-org.github.io/iptv/categories/sports.m3u')
+            .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.text(); })
+            .then(txt => {
+                hideLoading();
+                parsePlaylist(txt);
+                showToast('⚽ iptv-org Sports loaded (1000+ ch)');
+                dlog('iptv-org Sports playlist OK', 'success');
+                if (S.filtered && S.filtered.length > 0) {
+                    playChannel(S.filtered[0], 0);
+                }
+            })
+            .catch(err => {
+                hideLoading();
+                dlog(`Failed to fetch iptv-org Sports: ${err.message} — falling back to sample`, 'error');
+                showToast('⚠️ Fallback to Sample playlist');
+                S.activePl = 'sample'; D.playlistSelect.value = 'sample';
+                parsePlaylist(SAMPLE_M3U);
+            });
+    } else if (S.activePl === 'iptv_id') {
+        showLoading('Fetching iptv-org Indonesia playlist…');
+        dlog('Downloading iptv-org Indonesia channels…', 'info');
+        fetch('https://iptv-org.github.io/iptv/countries/id.m3u')
+            .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.text(); })
+            .then(txt => {
+                hideLoading();
+                parsePlaylist(txt);
+                showToast('🇮🇩 iptv-org Indonesia loaded');
+                dlog('iptv-org Indonesia playlist OK', 'success');
+                if (S.filtered && S.filtered.length > 0) {
+                    playChannel(S.filtered[0], 0);
+                }
+            })
+            .catch(err => {
+                hideLoading();
+                dlog(`Failed to fetch iptv-org Indonesia: ${err.message} — falling back to sample`, 'error');
+                showToast('⚠️ Fallback to Sample playlist');
+                S.activePl = 'sample'; D.playlistSelect.value = 'sample';
+                parsePlaylist(SAMPLE_M3U);
+            });
+    } else if (S.activePl === 'free_tv') {
+        showLoading('Fetching Free-TV IPTV playlist…');
+        dlog('Downloading Free-TV/IPTV (FTA verified channels)…', 'info');
+        fetch('https://raw.githubusercontent.com/Free-TV/IPTV/master/playlist.m3u8')
+            .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.text(); })
+            .then(txt => {
+                hideLoading();
+                parsePlaylist(txt);
+                showToast('✅ Free-TV IPTV loaded (FTA verified)');
+                dlog('Free-TV IPTV playlist OK', 'success');
+                if (S.filtered && S.filtered.length > 0) {
+                    playChannel(S.filtered[0], 0);
+                }
+            })
+            .catch(err => {
+                hideLoading();
+                dlog(`Failed to fetch Free-TV: ${err.message} — falling back to sample`, 'error');
                 showToast('⚠️ Fallback to Sample playlist');
                 S.activePl = 'sample'; D.playlistSelect.value = 'sample';
                 parsePlaylist(SAMPLE_M3U);
