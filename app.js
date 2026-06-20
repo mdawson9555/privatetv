@@ -182,6 +182,8 @@ function savePlaylists() {
 function rebuildSelect() {
     D.playlistSelect.innerHTML =
         `<option value="global_iptv">🌍 iptv-org Global</option>
+         <option value="dhanytv">🇮🇩 dhanytv Indonesia (730+ ch)</option>
+         <option value="dhanytv_ott">📺 dhanytv OTT-friendly (480+ ch HLS)</option>
          <option value="sample">✨ Sample (News)</option>`;
     S.playlists.forEach(pl => {
         const o = document.createElement('option');
@@ -210,6 +212,48 @@ function loadActivePl() {
             .catch(err => {
                 hideLoading();
                 dlog(`Failed to fetch global: ${err.message} — falling back to sample`, 'error');
+                showToast('⚠️ Fallback to Sample playlist');
+                S.activePl = 'sample'; D.playlistSelect.value = 'sample';
+                parsePlaylist(SAMPLE_M3U);
+            });
+    } else if (S.activePl === 'dhanytv') {
+        showLoading('Fetching dhanytv Indonesia playlist…');
+        dlog('Downloading dhanytv Indonesia playlist (730+ channels)…', 'info');
+        fetch('https://raw.githubusercontent.com/dhasap/dhanytv/main/dhanytv.m3u')
+            .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.text(); })
+            .then(txt => {
+                hideLoading();
+                parsePlaylist(txt);
+                showToast('🇮🇩 dhanytv Indonesia loaded (730+ ch)');
+                dlog('dhanytv playlist OK', 'success');
+                if (S.filtered && S.filtered.length > 0) {
+                    playChannel(S.filtered[0], 0);
+                }
+            })
+            .catch(err => {
+                hideLoading();
+                dlog(`Failed to fetch dhanytv: ${err.message} — falling back to sample`, 'error');
+                showToast('⚠️ Fallback to Sample playlist');
+                S.activePl = 'sample'; D.playlistSelect.value = 'sample';
+                parsePlaylist(SAMPLE_M3U);
+            });
+    } else if (S.activePl === 'dhanytv_ott') {
+        showLoading('Fetching dhanytv OTT-friendly playlist…');
+        dlog('Downloading dhanytv OTT playlist (480+ HLS channels)…', 'info');
+        fetch('https://raw.githubusercontent.com/dhasap/dhanytv/main/dhanytv-ott.m3u')
+            .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.text(); })
+            .then(txt => {
+                hideLoading();
+                parsePlaylist(txt);
+                showToast('📺 dhanytv OTT loaded (480+ ch HLS)');
+                dlog('dhanytv-ott playlist OK', 'success');
+                if (S.filtered && S.filtered.length > 0) {
+                    playChannel(S.filtered[0], 0);
+                }
+            })
+            .catch(err => {
+                hideLoading();
+                dlog(`Failed to fetch dhanytv-ott: ${err.message} — falling back to sample`, 'error');
                 showToast('⚠️ Fallback to Sample playlist');
                 S.activePl = 'sample'; D.playlistSelect.value = 'sample';
                 parsePlaylist(SAMPLE_M3U);
