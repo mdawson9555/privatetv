@@ -12,8 +12,52 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+
+    <!-- ═══════════ PASSWORD GATE ═══════════ -->
+    <div id="auth-gate">
+        <div class="auth-bg-blur"></div>
+        <div class="auth-card">
+            <div class="auth-logo">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="2" y="7" width="20" height="15" rx="2"/>
+                    <polyline points="17 2 12 7 7 2"/>
+                </svg>
+            </div>
+            <h1 class="auth-title">Richie Private <span>TV</span></h1>
+            <p class="auth-sub">Akses pribadi — masukkan kata sandi</p>
+            <form id="auth-form" autocomplete="off">
+                <div class="auth-input-wrap" id="auth-input-wrap">
+                    <svg class="auth-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                    </svg>
+                    <input id="auth-input" type="password" placeholder="Kata sandi…" autocomplete="new-password" spellcheck="false">
+                    <button type="button" id="auth-toggle-vis" aria-label="Toggle visibility">
+                        <svg id="auth-eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                            <circle cx="12" cy="12" r="3"/>
+                        </svg>
+                        <svg id="auth-eye-closed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none">
+                            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+                            <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+                            <line x1="1" y1="1" x2="23" y2="23"/>
+                        </svg>
+                    </button>
+                </div>
+                <p class="auth-error" id="auth-error"></p>
+                <button type="submit" class="auth-btn" id="auth-btn">
+                    <span id="auth-btn-text">Masuk</span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <line x1="5" y1="12" x2="19" y2="12"/>
+                        <polyline points="12 5 19 12 12 19"/>
+                    </svg>
+                </button>
+            </form>
+        </div>
+    </div>
+
     <!-- App Root -->
-    <div id="app">
+    <div id="app" style="display:none">
 
         <!-- ═══════════ SIDEBAR ═══════════ -->
         <aside id="sidebar" class="sidebar">
@@ -316,5 +360,86 @@
     <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.7/dist/hls.min.js"></script>
     <!-- App -->
     <script src="app.js"></script>
+
+    <!-- Auth Gate Script -->
+    <script>
+    (function () {
+        var PASS = 'tuwili';
+        var SESSION_KEY = 'ptv_auth';
+        var gate  = document.getElementById('auth-gate');
+        var app   = document.getElementById('app');
+        var form  = document.getElementById('auth-form');
+        var input = document.getElementById('auth-input');
+        var err   = document.getElementById('auth-error');
+        var btn   = document.getElementById('auth-btn');
+        var btnTxt= document.getElementById('auth-btn-text');
+        var wrap  = document.getElementById('auth-input-wrap');
+        var toggleVis = document.getElementById('auth-toggle-vis');
+        var eyeOpen   = document.getElementById('auth-eye-open');
+        var eyeClosed = document.getElementById('auth-eye-closed');
+
+        function unlock() {
+            gate.classList.add('auth-fade-out');
+            setTimeout(function () {
+                gate.style.display = 'none';
+                app.style.display  = '';
+            }, 480);
+        }
+
+        // Already authenticated in this session?
+        if (sessionStorage.getItem(SESSION_KEY) === '1') {
+            gate.style.display = 'none';
+            app.style.display  = '';
+            return;
+        }
+
+        gate.style.display = '';
+        setTimeout(function () { input.focus(); }, 100);
+
+        // Toggle show/hide password
+        toggleVis.addEventListener('click', function () {
+            if (input.type === 'password') {
+                input.type = 'text';
+                eyeOpen.style.display  = 'none';
+                eyeClosed.style.display = '';
+            } else {
+                input.type = 'password';
+                eyeOpen.style.display  = '';
+                eyeClosed.style.display = 'none';
+            }
+            input.focus();
+        });
+
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+            var val = input.value;
+
+            if (val === PASS) {
+                err.textContent = '';
+                wrap.classList.remove('auth-shake', 'auth-error-state');
+                btn.disabled = true;
+                btnTxt.textContent = 'Membuka…';
+                sessionStorage.setItem(SESSION_KEY, '1');
+                setTimeout(unlock, 300);
+            } else {
+                // Wrong password — shake animation
+                input.value = '';
+                err.textContent = 'Kata sandi salah. Coba lagi.';
+                wrap.classList.remove('auth-shake');
+                void wrap.offsetWidth; // reflow to restart animation
+                wrap.classList.add('auth-shake', 'auth-error-state');
+                input.focus();
+            }
+        });
+
+        // Remove error style on typing
+        input.addEventListener('input', function () {
+            if (wrap.classList.contains('auth-error-state')) {
+                wrap.classList.remove('auth-error-state');
+                err.textContent = '';
+            }
+        });
+    })();
+    </script>
 </body>
 </html>
